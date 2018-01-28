@@ -1,0 +1,75 @@
+﻿<table class="table">
+  <thead>
+  <th width="34%"></th>
+  <th width="33%">
+    /^<input id="your_guess" type="text" value=".*"/>$/
+    <a href="#" id='submit' class="btn btn-success">Gess!</a>
+  </th>
+  <th width="33%">/^<span>????</span>$/</th>
+  </tr>
+  </thead>
+  <tbody class="guesses">
+  <% i=-1 %>
+  <% @examples.to_a.each do |example, hidden_variant|%>
+    <tr id="tr" data-word="<%= example %>">
+      <td><%= example %></td>
+      <td><span class="variants" data-word="<%= example %>" data-hidden="<%= hidden_variant%>"></span></td>
+      <td><span><%= hidden_variant%></td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
+<p>Я устал, <a class="btn btn-danger" href="/reset">начать заново</a>.</p>
+<script>
+    function verify(){
+        var guess = $('#your_guess')
+        guess.removeClass('wrong');
+        var regexp_text = guess.val();
+        var regexp = new RegExp('^'+regexp_text+'$');
+        var all_right = true;
+        $(".guesses .variants").each(function( index ) {
+            var element = $(this);
+            console.log(element.data('word')+"->"+element.data('word').search(regexp));
+            var matching = (element.data('word').search(regexp) === 0);
+            element.text(matching);
+            var tr = $('tr[data-word=\''+element.data('word')+'\']');
+            if (matching == element.data('hidden')) {
+                tr.addClass('right').removeClass('wrong');
+            } else {
+                all_right = false;
+                tr.addClass('wrong').removeClass('right');
+            }
+        });
+        $('#submit').prop('disabled', !all_right);
+    }
+
+    function append(date) {
+        var str='<tr id="tr" data-word="'+date['example']+'">'+
+            '<td>'+date['example']+'</td>'+
+            '<td><span class="variants" data-word="'+date['example']+'" data-hidden="'+date['hidden_variant']+'"></span></td>'+
+            '<td><span>'+date['hidden_variant']+'</span></td></tr>';
+        $('.table').prepend(str);
+    }
+
+    jQuery(document).ready(function($){
+        verify();
+        $('#your_guess').on('keyup',verify);
+        $('#submit').click(function (){
+            $.ajax({
+                method: "POST",
+                url: "/",
+                cache: false,
+                data: { regexp: $('#your_guess').val() }
+            })
+                .done(function( data ) {
+                    append(jQuery.parseJSON(data));
+                    verify();
+                })
+                .fail(function() {
+                    $('#your_guess').addClass('wrong');
+                });
+            ;
+            return false;
+        });
+    });
+</script>

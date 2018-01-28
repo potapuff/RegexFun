@@ -1,0 +1,1 @@
+thin -e production --socket /tmp/thin.wifi.sock -d stop
